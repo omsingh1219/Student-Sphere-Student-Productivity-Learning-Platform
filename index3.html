@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Life Pilot</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Floating AI Assistant -->
+    <div id="aiLauncher" onclick="toggleChat()">
+        🤖
+    </div>
+
+    <div id="aiWindow" class="hidden">
+        <div class="ai-header">
+            <span>Life Pilot AI</span>
+            <div style="display:flex; gap:10px;">
+                <button class="icon-btn" onclick="toggleAiSettings()">⚙️</button>
+                <button class="icon-btn" onclick="toggleChat()">❌</button>
+            </div>
+        </div>
+
+        <div id="aiSettingsPanel" class="hidden">
+            <p style="font-size:0.8rem; margin-bottom:0.5rem; color:var(--text-muted)">
+                Add OpenAI API Key for real-time answers. (Stored locally)
+            </p>
+            <input type="password" id="aiApiKey" placeholder="sk-..." style="margin-bottom:0.5rem;">
+            <button onclick="saveAiKey()" style="width:100%; padding:0.5rem;">Save Key 🔐</button>
+        </div>
+
+        <div id="aiChatArea">
+            <div class="ai-msg">Hello! I am your Life Pilot. Ask me anything!</div>
+        </div>
+
+        <div class="ai-input-area">
+            <input id="aiInput" placeholder="Type here..." onkeypress="handleAiEnter(event)">
+            <button onclick="askAI()">➤</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+
+    <!-- Toggles -->
+    <button id="darkBtn" onclick="toggleDark()">🌙</button>
+
+    <!-- Focus Mode Overlay -->
+    <div id="focusOverlay" class="hidden">
+        <div class="focus-header">
+            <h2>🎯 Deep Focus Mode</h2>
+            <div class="progress-container">
+                <div class="progress-label">Appreciation Bar (Target: 2 Hours)</div>
+                <div class="progress-track">
+                    <div id="focusProgressBar" class="progress-fill"></div>
+                </div>
+                <div id="focusTimeDisplay">00:00 / 02:00</div>
+            </div>
+            <button class="danger-btn" onclick="attemptExitFocus()">End Session</button>
+        </div>
+
+        <div class="focus-grid">
+            <!-- Left: Tools -->
+            <div class="focus-card">
+                <h3>⏱️ Timer</h3>
+                <div id="focusTimerDisplay">25:00</div>
+                <button onclick="startTimer()">Start</button>
+                <button onclick="pauseTimer()">Pause</button>
+                <button onclick="resetTimer()">Reset</button>
+
+                <h3 style="margin-top: 2rem;">🧮 Sci-Calc</h3>
+                <div class="sci-calc-grid">
+                    <input id="sciDisplay" readonly>
+                    <button onclick="sciCalc('sin')">sin</button>
+                    <button onclick="sciCalc('cos')">cos</button>
+                    <button onclick="sciCalc('tan')">tan</button>
+                    <button onclick="sciCalc('C')" class="danger-btn">C</button>
+
+                    <button onclick="sciCalc('log')">log</button>
+                    <button onclick="sciCalc('ln')">ln</button>
+                    <button onclick="sciCalc('sqrt')">√</button>
+                    <button onclick="sciCalc('/')">÷</button>
+
+                    <button onclick="sciCalc('7')">7</button>
+                    <button onclick="sciCalc('8')">8</button>
+                    <button onclick="sciCalc('9')">9</button>
+                    <button onclick="sciCalc('*')">×</button>
+
+                    <button onclick="sciCalc('4')">4</button>
+                    <button onclick="sciCalc('5')">5</button>
+                    <button onclick="sciCalc('6')">6</button>
+                    <button onclick="sciCalc('-')">-</button>
+
+                    <button onclick="sciCalc('1')">1</button>
+                    <button onclick="sciCalc('2')">2</button>
+                    <button onclick="sciCalc('3')">3</button>
+                    <button onclick="sciCalc('+')">+</button>
+
+                    <button onclick="sciCalc('0')">0</button>
+                    <button onclick="sciCalc('.')">.</button>
+                    <button onclick="sciCalc('(')">(</button>
+                    <button onclick="sciCalc(')')">)</button>
+
+                    <button onclick="sciCalc('=')" style="grid-column: span 4; background: var(--primary);">EQ</button>
+                </div>
+
+                <h3 style="margin-top: 2rem;">🎵 Apps</h3>
+                <div class="app-links">
+                    <button onclick="window.open('https://music.youtube.com', '_blank')">🎧 Music</button>
+                    <button onclick="window.open('https://www.youtube.com', '_blank')">📺 YouTube</button>
+                    <button onclick="window.open('https://chat.openai.com', '_blank')">🤖 GPT</button>
+                </div>
+            </div>
+
+            <!-- Right: Notes -->
+            <div class="focus-card">
+                <h3>📝 Focus Notes</h3>
+                <select id="focusNoteType">
+                    <option value="Short Note">Short Note</option>
+                    <option value="Formula">Formula</option>
+                    <option value="Idea">Idea</option>
+                </select>
+                <textarea id="focusNoteInput" placeholder="Type your thoughts here..."></textarea>
+                <button onclick="saveFocusNote()">Save to Notes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Overlay -->
+    <div id="authOverlay" class="overlay hidden">
+        <div class="glass-card" style="padding: 2.5rem; max-width: 400px;">
+            <h1 style="margin-bottom:1rem;">🚀 Life Pilot</h1>
+
+            <!-- Auth Tabs -->
+            <div class="auth-tabs">
+                <button id="tabSignIn" class="auth-tab active" onclick="toggleAuthMode('signin')">Sign In</button>
+                <button id="tabSignUp" class="auth-tab" onclick="toggleAuthMode('signup')">Sign Up</button>
+            </div>
+
+            <!-- Auth Form -->
+            <div id="authForm">
+                <input type="text" id="userName" placeholder="Your Name" class="hidden">
+                <input type="email" id="userEmail" placeholder="Email Address">
+                <input type="password" id="userPass" placeholder="Password">
+
+                <button id="authBtn" onclick="handleAuth()" style="width:100%; margin-top:0.5rem;">Sign In</button>
+
+                <div class="divider">or</div>
+
+                <button onclick="handleGoogleLogin()" class="google-btn">
+                    <img src="https://www.google.com/favicon.ico" alt="G">
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Dashboard -->
+    <div id="welcomeOverlay" class="overlay hidden">
+        <div class="welcome-content">
+            <h1 id="welcomeMsg">Welcome!</h1>
+            <p id="quoteMsg">"Your only limit is your mind."</p>
+            <button class="big-btn" onclick="launchApp()">Let's Go 🚀</button>
+        </div>
+    </div>
+
+
+
+    <header id="mainHeader" class="hidden">
+        <div class="logo">🚀 Life Pilot</div>
+        <nav>
+            <ul class="nav-links">
+                <li><a onclick="window.scrollTo({top:0, behavior:'smooth'})">Home</a></li>
+                <li><a onclick="document.getElementById('mainContainer').scrollIntoView({behavior:'smooth'})">Student
+                        Dashboard</a></li>
+                <li><a onclick="logout()" style="color: #ef4444;">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="hero" class="hero-section hidden">
+        <h1 class="hero-title">Welcome back, <span id="heroName" class="text-gradient">Pilot</span></h1>
+        <p class="hero-subtitle">Your space for <span id="typingText"></span><span class="cursor">|</span></p>
+    </section>
+
+    <div id="mainContainer" class="container hidden">
+
+        <!-- ---------------------- TO-DO LIST ---------------------- -->
+        <section id="todo" class="section">
+            <h2>📝 To-Do List</h2>
+            <div class="input-group">
+                <input id="todoInput" placeholder="Add a new task..." onkeypress="if(event.key === 'Enter') addTask()">
+                <button onclick="addTask()">Add</button>
+            </div>
+            <div id="todoList"></div>
+        </section>
+
+        <!-- ---------------------- BUDGET ---------------------- -->
+        <section id="budget" class="section">
+            <h2>💰 Budget Planner</h2>
+            <input id="budgetDate" type="date">
+            <input id="budgetAmount" type="number" placeholder="Amount">
+            <button onclick="addBudget()">Add Entry</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="budgetTable"></tbody>
+            </table>
+            <canvas id="budgetChart"></canvas>
+        </section>
+
+        <!-- ---------------------- NOTES MANAGER ---------------------- -->
+        <section id="notes" class="section">
+            <h2>📘 Notes Manager</h2>
+            <div class="input-group">
+                <input id="noteTitle" placeholder="Title (e.g. Physics Formula)">
+                <textarea id="noteBody" placeholder="Write your note here..."></textarea>
+                <button onclick="saveNote()">Save Note</button>
+            </div>
+            <div id="notesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- ---------------------- CODE SNIPPETS ---------------------- -->
+        <section id="snippets" class="section">
+            <h2>💻 Code Snippets</h2>
+            <div class="input-group">
+                <input id="snippetTitle" placeholder="Snippet Name (e.g. React Hook)">
+                <textarea id="snippetCode" class="code-font" placeholder="const hello = () => { ... }"></textarea>
+                <button onclick="saveSnippet()">Save Snippet</button>
+            </div>
+            <div id="snippetList" class="notes-grid"></div>
+        </section>
+
+        <!-- ---------------------- APPS HUB ---------------------- -->
+        <section id="apps" class="section">
+            <h2>📱 Student Hub</h2>
+            <div class="apps-grid">
+                <div class="app-card" onclick="openApp('https://chat.openai.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=openai.com&sz=64" alt="GPT">
+                    <span>ChatGPT</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://youtube.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=youtube.com&sz=64" alt="YT">
+                    <span>YouTube</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://github.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=github.com&sz=64" alt="GH">
+                    <span>GitHub</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://stackoverflow.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=stackoverflow.com&sz=64" alt="SO">
+                    <span>StackOverflow</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://leetcode.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=leetcode.com&sz=64" alt="LC">
+                    <span>LeetCode</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://classroom.google.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=classroom.google.com&sz=64" alt="Class">
+                    <span>Classroom</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://geeksforgeeks.org')">
+                    <img src="https://www.google.com/s2/favicons?domain=geeksforgeeks.org&sz=64" alt="GFG">
+                    <span>GeeksForGeeks</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://w3schools.com')">
+                    <img src="https://www.google.com/s2/favicons?domain=w3schools.com&sz=64" alt="W3">
+                    <span>W3Schools</span>
+                </div>
+                <div class="app-card" onclick="openApp('https://paruluniversity.codetantra.com/login.jsp')">
+                    <img src="https://www.google.com/s2/favicons?domain=codetantra.com&sz=64" alt="CT">
+                    <span>CodeTantra</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---------------------- SKILLS ---------------------- -->
+        <section id="skills" class="section">
+            <h2>🚀 Skills Build-Up</h2>
+            <textarea id="skillsText" placeholder="Write skills…"></textarea>
+        </section>
+
+        <!-- ---------------------- HABIT TRACKER ---------------------- -->
+
+        <section id="habits" class="section">
+            <h2>📅 Habit Tracker</h2>
+            <div class="input-group">
+                <input id="habitInput" placeholder="New Habit (e.g. Read 30m)">
+                <button onclick="addHabit()">Add</button>
+            </div>
+            <div id="habitList" class="habit-grid"></div>
+        </section>
+
+        <!-- ---------------------- HYDRATION TRACKER ---------------------- -->
+        <section id="hydration" class="section">
+            <h2>💧 Hydration Tracker</h2>
+            <div class="glass-card" style="text-align: center; margin-bottom: 1.5rem;">
+                <h3 id="waterText" style="margin-top:0;">0 / 8 Glasses</h3>
+                <div id="waterGrid" class="water-grid"></div>
+                <div class="water-controls">
+                    <button onclick="removeWater()" class="water-btn btn-undo">Undo (-)</button>
+                    <button onclick="addWater()" class="water-btn btn-add">Drink (+)</button>
+                    <button onclick="toggleHistory()" class="water-btn btn-history">History 📜</button>
+                </div>
+                <div id="waterHistoryList" class="hidden" style="margin-top:1rem; text-align:left;"></div>
+            </div>
+        </section>
+
+        <!-- ---------------------- FLASHCARDS ---------------------- -->
+        <section id="flashcards" class="section">
+            <h2>🧠 Flashcards</h2>
+            <div class="input-group">
+                <input id="flashQuestion" placeholder="Question / Front">
+                <input id="flashAnswer" placeholder="Answer / Back">
+                <button onclick="addFlashcard()">Add Card</button>
+            </div>
+
+            <div class="flashcard-container">
+                <div id="flashcard" class="flash-card" onclick="flipCard()">
+                    <div class="flash-front">
+                        <h3 id="flashFrontText">No cards yet</h3>
+                    </div>
+                    <div class="flash-back">
+                        <h3 id="flashBackText">Add one above!</h3>
+                    </div>
+                </div>
+                <div class="flash-controls">
+                    <button onclick="prevCard()">← Prev</button>
+                    <span id="cardIndicator">0 / 0</span>
+                    <button onclick="nextCard()">Next →</button>
+                </div>
+                <button class="delete-btn full-width" onclick="deleteCurrentCard()"
+                    style="margin-top:1rem; background: #ef4444;">Delete Current Card</button>
+            </div>
+        </section>
+
+        <!-- ---------------------- POMODORO ---------------------- -->
+        <section id="pomodoro" class="section">
+            <h2>⏳ Pomodoro Timer</h2>
+            <h1 id="timer">25:00</h1>
+            <button onclick="startTimer()">Start</button>
+            <audio controls src="assets/focus.mp3"></audio>
+            <p>Sessions Completed: <span id="pomoCount">0</span></p>
+        </section>
+
+        <!-- ---------------------- CALCULATOR ---------------------- -->
+        <section id="calc" class="section">
+            <h2>🧮 Calculator</h2>
+            <div class="calc-grid">
+                <button onclick="calcPress('AC')">AC</button>
+                <button onclick="calcPress('DEL')">DEL</button>
+                <button onclick="calcPress('%')">%</button>
+                <button onclick="calcPress('/')">÷</button>
+                <button onclick="calcPress('7')">7</button>
+                <button onclick="calcPress('8')">8</button>
+                <button onclick="calcPress('9')">9</button>
+                <button onclick="calcPress('*')">×</button>
+                <button onclick="calcPress('4')">4</button>
+                <button onclick="calcPress('5')">5</button>
+                <button onclick="calcPress('6')">6</button>
+                <button onclick="calcPress('-')">−</button>
+                <button onclick="calcPress('1')">1</button>
+                <button onclick="calcPress('2')">2</button>
+                <button onclick="calcPress('3')">3</button>
+                <button onclick="calcPress('+')">+</button>
+                <button onclick="calcPress('0')" style="grid-column:span 2;">0</button>
+                <button onclick="calcPress('.')">.</button>
+                <button onclick="calcResult()">=</button>
+            </div>
+            <div id="calcScreen">0</div>
+        </section>
+
+        <!-- ---------------------- TIME ---------------------- -->
+        <section id="time" class="section">
+            <h2>🕒 Time</h2>
+            <h1 id="dateClock" style="font-size: 3rem; text-align: center; margin: 1rem 0;"></h1>
+        </section>
+
+        <!-- ---------------------- SGPA ---------------------- -->
+        <section id="sgpa" class="section">
+            <h2>🎓 Grades (SGPA)</h2>
+            <div class="input-group">
+                <input id="sgpaSubject" placeholder="Subject (e.g. Maths)">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <input id="sgpaCredit" type="number" placeholder="Credit">
+                    <input id="sgpaGrade" type="number" placeholder="Grade Pt">
+                </div>
+                <button onclick="addSubject()">Add Course</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin:1rem 0;">
+                <h3>SGPA:</h3>
+                <h2 id="sgpaValue" style="color:var(--primary); font-size:2rem;">0.00</h2>
+            </div>
+            <div id="subjectList" class="habit-grid"></div>
+        </section>
+
+        <!-- ---------------------- BINAURAL ---------------------- -->
+        <section id="binaural" class="section">
+            <h2>🎧 Focus Sounds</h2>
+            <p style="margin-bottom:1rem; color:var(--text-muted); font-size:0.9rem;">
+                Use headphones. Play in background.
+            </p>
+            <div class="app-links">
+                <button onclick="window.open('https://mynoise.net', '_blank')">🌊 White Noise</button>
+                <button onclick="window.open('https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ', '_blank')">🧠
+                    Deep Focus</button>
+                <button onclick="window.open('https://lofi.co', '_blank')">☕ Lofi Beats</button>
+            </div>
+        </section>
+
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
